@@ -19,8 +19,10 @@ export async function createServer() {
     const { name, email, whatsapp, service, budget, message } = req.body;
 
     if (!process.env.RESEND_API_KEY) {
-      console.error("RESEND_API_KEY is missing");
-      return res.status(500).json({ error: "Email service is not configured" });
+      console.error("RESEND_API_KEY is missing from environment variables");
+      return res.status(500).json({ 
+        error: "Email service is not configured. Please add 'RESEND_API_KEY' to your Secrets in AI Studio Settings." 
+      });
     }
 
     const resend = new Resend(process.env.RESEND_API_KEY);
