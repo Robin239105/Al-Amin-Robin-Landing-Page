@@ -14,31 +14,82 @@ export async function createServer() {
 
   app.use(express.json());
 
-  // Resend API Route
+  // Contact API Route using Resend
   app.post("/api/contact", async (req, res) => {
     const { name, email, whatsapp, service, budget, message } = req.body;
 
     if (!process.env.RESEND_API_KEY) {
-      return res.status(500).json({ error: "RESEND_API_KEY is not configured" });
+      console.error("RESEND_API_KEY is missing");
+      return res.status(500).json({ error: "Email service is not configured" });
     }
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
+    const htmlTemplate = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+            .header { background-color: #2ea043; padding: 20px; text-align: center; color: #ffffff; }
+            .header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; }
+            .content { padding: 30px; }
+            .field { margin-bottom: 20px; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+            .label { font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-family: monospace; }
+            .value { font-size: 16px; color: #ffffff; font-weight: 500; }
+            .message-box { background-color: #0d1117; border: 1px solid #30363d; padding: 15px; border-radius: 4px; margin-top: 10px; line-height: 1.6; }
+            .footer { padding: 20px; text-align: center; font-size: 12px; color: #8b949e; border-top: 1px solid #30363d; }
+            .accent { color: #2ea043; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>New Portfolio Inquiry</h1>
+            </div>
+            <div class="content">
+              <div class="field">
+                <div class="label">Client Name</div>
+                <div class="value">${name}</div>
+              </div>
+              <div class="field">
+                <div class="label">Email Address</div>
+                <div class="value"><a href="mailto:${email}" style="color: #58a6ff; text-decoration: none;">${email}</a></div>
+              </div>
+              <div class="field">
+                <div class="label">WhatsApp</div>
+                <div class="value">${whatsapp}</div>
+              </div>
+              <div class="field">
+                <div class="label">Requested Service</div>
+                <div class="value accent">${service}</div>
+              </div>
+              <div class="field">
+                <div class="label">Budget Range</div>
+                <div class="value">${budget}</div>
+              </div>
+              <div class="field">
+                <div class="label">Message</div>
+                <div class="message-box">${message.replace(/\n/g, '<br>')}</div>
+              </div>
+            </div>
+            <div class="footer">
+              Sent from <span class="accent">robin.bro</span> Portfolio Terminal<br>
+              ${new Date().toLocaleString()}
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
     try {
       const { data, error } = await resend.emails.send({
-        from: "Portfolio Contact <onboarding@resend.dev>",
-        to: ["robin646087@gmail.com"],
-        subject: `New Portfolio Inquiry: ${service}`,
-        html: `
-          <h2>New Contact Form Submission</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>WhatsApp:</strong> ${whatsapp}</p>
-          <p><strong>Service:</strong> ${service}</p>
-          <p><strong>Budget:</strong> ${budget}</p>
-          <p><strong>Message:</strong></p>
-          <p>${message}</p>
-        `,
+        from: 'Portfolio Contact <contact@alaminrobin.com>',
+        to: ['admin@alaminrobin.com'],
+        subject: `New Portfolio Message from ${name}: ${service}`,
+        replyTo: email,
+        html: htmlTemplate,
       });
 
       if (error) {
@@ -46,7 +97,7 @@ export async function createServer() {
         return res.status(400).json({ error });
       }
 
-      res.status(200).json({ message: "Email sent successfully", data });
+      res.status(200).json({ message: "Email sent successfully", id: data?.id });
     } catch (err) {
       console.error("Server Error:", err);
       res.status(500).json({ error: "Internal Server Error" });
