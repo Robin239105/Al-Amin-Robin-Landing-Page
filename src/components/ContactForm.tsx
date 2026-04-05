@@ -13,6 +13,7 @@ const SERVICES = [
 
 export default function ContactForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,6 +26,7 @@ export default function ContactForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
+    setErrorMessage("");
 
     try {
       const response = await fetch("/api/contact", {
@@ -32,6 +34,8 @@ export default function ContactForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
       });
+
+      const result = await response.json();
 
       if (response.ok) {
         setStatus("success");
@@ -45,10 +49,12 @@ export default function ContactForm() {
         });
       } else {
         setStatus("error");
+        setErrorMessage(result.error || "Failed to send message. Please try again.");
       }
     } catch (error) {
       console.error("Form submission error:", error);
       setStatus("error");
+      setErrorMessage("Network error. Please check your connection and try again.");
     }
   };
 
@@ -165,7 +171,7 @@ export default function ContactForm() {
       {status === "error" && (
         <div className="flex items-center gap-2 text-red-500 text-sm font-mono bg-red-500/10 p-3 rounded border border-red-500/20">
           <AlertCircle size={16} />
-          Failed to send message. Please try again.
+          {errorMessage}
         </div>
       )}
 

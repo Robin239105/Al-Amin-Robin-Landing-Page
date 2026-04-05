@@ -85,6 +85,7 @@ export async function createServer() {
 
     try {
       const { data, error } = await resend.emails.send({
+        // alaminrobin.com is verified in Resend, so we can use it as the 'from' address.
         from: 'Portfolio Contact <contact@alaminrobin.com>',
         to: ['admin@alaminrobin.com'],
         subject: `New Portfolio Message from ${name}: ${service}`,
@@ -93,14 +94,20 @@ export async function createServer() {
       });
 
       if (error) {
-        console.error("Resend Error:", error);
-        return res.status(400).json({ error });
+        console.error("Resend API Error:", error);
+        return res.status(400).json({ 
+          error: error.message || "Failed to send email via Resend",
+          details: error 
+        });
       }
 
       res.status(200).json({ message: "Email sent successfully", id: data?.id });
     } catch (err) {
-      console.error("Server Error:", err);
-      res.status(500).json({ error: "Internal Server Error" });
+      console.error("Server Error during email sending:", err);
+      res.status(500).json({ 
+        error: "Internal Server Error", 
+        message: err instanceof Error ? err.message : String(err) 
+      });
     }
   });
 
