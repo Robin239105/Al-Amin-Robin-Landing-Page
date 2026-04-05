@@ -134,6 +134,9 @@ export async function createServer() {
 
 if (process.env.NODE_ENV !== "production" && import.meta.url === `file://${process.argv[1]}`) {
   const PORT = 3000;
+  console.log("Checking environment variables...");
+  console.log("RESEND_API_KEY detected:", !!process.env.RESEND_API_KEY);
+  
   createServer().then((app) => {
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on http://localhost:${PORT}`);
